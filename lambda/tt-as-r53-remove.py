@@ -21,13 +21,17 @@ def handler(event, context):
         # Get the custom notification data into a dict and assign to vars
         notification_meta = json.loads(message["NotificationMetadata"])
         r53_zone = notification_meta["r53_zone"]
-        hc_id = notification_meta["hc_id"]
 
     try:
-        instance = ec2.Instance(message["EC2InstanceId"])
-        logger.info(instance.public_ip_address)
+        # Find Route53 Record (Required incase manual termination means public IP isnt sent)
+        records = r53.list_resource_record_sets(StartRecordName="web.tt.internal.", HostedZoneId=r53_zone)["ResourceRecordSets"]
+        for record in records:
+            logger.info(record["SetIdentifier"])
+            if message["EC2InstanceId"] in record["SetIdentifier"]:
+                hc_id = record["HealthCheckId"]
+                ip = record["ResourceRecords"][0]["Value"]
 
-        # Create a new Route53 record
+        # Delete Route53 record
         r53.change_resource_record_sets(
             HostedZoneId=r53_zone,
             ChangeBatch={
@@ -41,7 +45,7 @@ def handler(event, context):
                     'SetIdentifier': 'web-tt ' + message["EC2InstanceId"],
                     'ResourceRecords': [
                     {
-                        'Value': instance.public_ip_address
+                        'Value': ip
                     }
                     ],
                     'HealthCheckId': hc_id,
@@ -52,6 +56,7 @@ def handler(event, context):
             }
         )
 
+        r53.delete_health_check(HealthCheckId=hc_id)
 
         response = asg.complete_lifecycle_action(
             LifecycleHookName=message["LifecycleHookName"],

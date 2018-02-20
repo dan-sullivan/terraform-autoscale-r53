@@ -127,10 +127,10 @@ resource "aws_autoscaling_group" "tt_as_group" {
   availability_zones        = ["eu-west-2"]
   name                      = "tt-as-group"
   max_size                  = 5
-  min_size                  = 2
+  min_size                  = 0
   health_check_grace_period = 300
   health_check_type         = "EC2"
-  desired_capacity          = 2
+  desired_capacity          = 0
   force_delete              = true
   launch_configuration      = "${aws_launch_configuration.tt_as_group.name}"
   vpc_zone_identifier       = ["${data.aws_subnet.tt_as_group.id}"]
@@ -144,7 +144,6 @@ resource "aws_autoscaling_group" "tt_as_group" {
     notification_metadata = <<EOF
 {
   "r53_zone": "${data.aws_route53_zone.tt.id}",
-  "hc_id": "${aws_route53_health_check.tt-as-group.id}",
   "dns_record": "${var.dns_zone}",
   "dns_prefix": "${var.dns_prefix}"
 }
@@ -160,7 +159,6 @@ EOF
     notification_metadata = <<EOF
 {
   "r53_zone": "${data.aws_route53_zone.tt.id}",
-  "hc_id": "${aws_route53_health_check.tt-as-group.id}",
   "dns_record": "${var.dns_zone}",
   "dns_prefix": "${var.dns_prefix}"
 }
@@ -290,16 +288,3 @@ resource "aws_sns_topic_subscription" "tt-as-lambda-terminated" {
   endpoint  = "${aws_lambda_function.tt-as-r53-remove.arn}"
 }
 
-# Route53 Health Check
-resource "aws_route53_health_check" "tt-as-group" {
-  fqdn              = "webcheck.tt.internal"
-  port              = 80
-  type              = "HTTP"
-  resource_path     = "/"
-  failure_threshold = "3"
-  request_interval  = "10"
-
-  tags = {
-    Name = "tt-as-r53-health-check"
-  }
-}

@@ -21,11 +21,24 @@ def handler(event, context):
         # Get the custom notification data into a dict and assign to vars
         notification_meta = json.loads(message["NotificationMetadata"])
         r53_zone = notification_meta["r53_zone"]
-        hc_id = notification_meta["hc_id"]
 
     try:
         instance = ec2.Instance(message["EC2InstanceId"])
         logger.info(instance.public_ip_address)
+
+        response = r53.create_health_check(
+            CallerReference=message["RequestId"],
+            HealthCheckConfig={
+                'IPAddress': instance.public_ip_address,
+                'Port': 80,
+                'Type': 'HTTP',
+                'ResourcePath': '/',
+                'RequestInterval': 10,
+                'FailureThreshold': 3,
+            }
+        )
+
+        hc_id = response[u'HealthCheck']["Id"]
 
         # Create a new Route53 record
         r53.change_resource_record_sets(
