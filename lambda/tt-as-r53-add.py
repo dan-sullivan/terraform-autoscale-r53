@@ -1,6 +1,7 @@
 import boto3
 import logging
 import json
+import uuid
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
@@ -26,8 +27,11 @@ def handler(event, context):
         instance = ec2.Instance(message["EC2InstanceId"])
         logger.info(instance.public_ip_address)
 
+        # Generate a unique key for caller reference
+        callref = str(uuid.uuid1())
+        logger.info(callref)
         response = r53.create_health_check(
-            CallerReference=message["RequestId"],
+            CallerReference=callref,
             HealthCheckConfig={
                 'IPAddress': instance.public_ip_address,
                 'Port': 80,
