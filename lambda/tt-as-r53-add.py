@@ -22,6 +22,8 @@ def handler(event, context):
         # Get the custom notification data into a dict and assign to vars
         notification_meta = json.loads(message["NotificationMetadata"])
         r53_zone = notification_meta["r53_zone"]
+        dns_record = notification_meta["dns_record"]
+        dns_prefix = notification_meta["dns_prefix"]
 
     try:
         instance = ec2.Instance(message["EC2InstanceId"])
@@ -52,10 +54,10 @@ def handler(event, context):
                 {
                     'Action': 'CREATE',
                     'ResourceRecordSet': {
-                    'Name': "web.tt.internal.",
+                    'Name': dns_prefix + "." + dns_record,
                     'Type': 'A',
                     'Weight': 10,
-                    'SetIdentifier': 'web-tt ' + message["EC2InstanceId"],
+                    'SetIdentifier': dns_prefix + message["EC2InstanceId"],
                     'ResourceRecords': [
                     {
                         'Value': instance.public_ip_address

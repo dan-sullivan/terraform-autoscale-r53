@@ -2,3 +2,4 @@ zips/
 .swp
 .terraform/
 terraform.tfstate.backup
+terraform.tfvars

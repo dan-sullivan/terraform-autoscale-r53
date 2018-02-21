@@ -21,10 +21,12 @@ def handler(event, context):
         # Get the custom notification data into a dict and assign to vars
         notification_meta = json.loads(message["NotificationMetadata"])
         r53_zone = notification_meta["r53_zone"]
+        dns_record = notification_meta["dns_record"]
+        dns_prefix = notification_meta["dns_prefix"]
 
     try:
         # Find Route53 Record (Required incase manual termination means public IP isnt sent)
-        records = r53.list_resource_record_sets(StartRecordName="web.tt.internal.", HostedZoneId=r53_zone)["ResourceRecordSets"]
+        records = r53.list_resource_record_sets(StartRecordName=dns_prefix + "." + dns_record, HostedZoneId=r53_zone)["ResourceRecordSets"]
         for record in records:
             logger.info(record["SetIdentifier"])
             if message["EC2InstanceId"] in record["SetIdentifier"]:
@@ -39,10 +41,10 @@ def handler(event, context):
                 {
                     'Action': 'DELETE',
                     'ResourceRecordSet': {
-                    'Name': "web.tt.internal.",
+                    'Name': dns_prefix + "." + dns_record,
                     'Type': 'A',
                     'Weight': 10,
-                    'SetIdentifier': 'web-tt ' + message["EC2InstanceId"],
+                    'SetIdentifier': dns_prefix + message["EC2InstanceId"],
                     'ResourceRecords': [
                     {
                         'Value': ip

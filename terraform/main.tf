@@ -1,3 +1,15 @@
+variable "subnet_id" {}
+
+variable "dns_zone" {}
+
+variable "dns_prefix" {}
+
+variable "key_name" {}
+
+variable "ami_name" {}
+
+variable "region" {}
+
 terraform {
   required_version = ">= 0.10.1"
   backend "s3" {
@@ -8,22 +20,10 @@ terraform {
 }
 
 provider "aws" {
-  region = "eu-west-2"
+  region = "${var.region}"
 }
 
 data "aws_caller_identity" "current" {}
-
-variable "subnet_id" {
-  default = "subnet-13988d6b"
-}
-
-variable "dns_zone" {
-  default = "tt.internal."
-}
-
-variable "dns_prefix" {
-  default = "web."
-}
 
 data "aws_subnet" "tt_as_group" {
   id = "${var.subnet_id}"
@@ -33,17 +33,17 @@ data "aws_route53_zone" "tt" {
   name = "${var.dns_zone}"
 }
 
-data "aws_ami" "ubuntu" {
+data "aws_ami" "web_ami" {
   most_recent = true
   filter {
     name   = "name"
-    values = ["ubuntu/images/hvm-ssd/ubuntu-trusty-14.04-amd64-server-*"]
+    values = ["${var.ami_name}"]
   }
   filter {
     name   = "virtualization-type"
     values = ["hvm"]
   }
-  owners = ["099720109477"] # Canonical
+  owners = ["self"] # Our account
 }
 
 # IAM Roles
@@ -113,10 +113,15 @@ resource "aws_security_group" "tt_as_web_instance" {
 # Web tier launch configuraiton
 resource "aws_launch_configuration" "tt_as_group" {
   name_prefix   = "lc-tt-as-group-"
-  image_id      = "${data.aws_ami.ubuntu.id}"
+  image_id      = "${data.aws_ami.web_ami.id}"
   instance_type = "t2.micro"
   security_groups = ["${aws_security_group.tt_as_web_instance.id}"]
   associate_public_ip_address = true
+  key_name      = "${var.key_name}"
+  user_data     = <<EOF
+#!/bin/bash
+curl http://169.254.169.254/latest/meta-data/public-ipv4 > /var/www/html/index.html
+EOF
   lifecycle {
     create_before_destroy = true
   }
