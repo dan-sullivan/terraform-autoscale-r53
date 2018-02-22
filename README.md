@@ -2,16 +2,16 @@
 
 ## Summary
 
-This repo demonstrates a Terraform configuration for creating and removing AWS Route 53 entries on a DNS record set when EC2 instances are created or terminated as part of an Autoscaling Group. It does this by sending notifications to SNS via the Autoscaling lifecycle rules and using Lambda functions to add or remove the DNS entries.
+This repo demonstrates a Terraform configuration for creating and removing AWS Route 53 entries on a DNS record set when EC2 instances are created or terminated as part of an Autoscaling Group. It does this by sending notifications to SNS via the Autoscaling lifecycle rules and using Lambda functions to add or remove the DNS entries and health checks.
 
 ## High Level Diagram
 ![Diagram](Autoscaling_Lambda_R53.png)
 
 ## Getting Started
 
-AWS credentials are assumed to be profiles in your `~/.aws/credentials` file. 
+AWS credentials are assumed to be profiles in your `~/.aws/credentials` file. You can specify the profile in the tfvars file or leave blank for `default`
 
-Amend backend state config in `terraform/main.tf`
+Amend backend state config in `terraform/main.tf` to point to your statefiles bucket or another backend.
 
 Enter the terraform directory and create a  `terraform.tfvars` file with the following:
 
@@ -22,6 +22,7 @@ dns_prefix  = "www"
 key_name    = "tt-dsul"
 region      = "eu-west-2"
 ami_name    = "my-ami*"
+profile     = "my-optional-profile"
 ```
 
 The dns zone will used to lookup your zone id in Route 53. Ensure it has the . at the end.
@@ -33,8 +34,8 @@ The ami_name is used as a search string for your ami in your account. Look in pa
 
 ### Build
 
-Enter the `terraform` directory and run `terraform init` 
-`terraform plan` to see changes to be applied 
-`terraform apply` to spin the environment up. 
+Enter the `terraform` directory and run `terraform init`  
+`terraform plan` to see changes to be applied  
+`terraform apply` to spin the environment up.  
 
 
