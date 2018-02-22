@@ -13,7 +13,7 @@ This repo demonstrates a Terraform configuration for creating and removing AWS R
 4. A Lambda function subscribed to the SNS topic creates a new DNS entry and an associated health check in Route 53
 5. A lifecycle CONTINUE is sent back to the Autoscaling group
 
-###  Scale out
+###  Scale in
 1. An autoscaling scale-in trigger event occurs e.g. Cloudwatch metrics threshbold back within constraints
 2. The autoscaling group terminates an instance
 3. A lifecycle hook for TERMINATING is created and sent to SNS
