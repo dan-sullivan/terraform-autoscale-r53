@@ -4,6 +4,23 @@
 
 This repo demonstrates a Terraform configuration for creating and removing AWS Route 53 entries on a DNS record set when EC2 instances are created or terminated as part of an Autoscaling Group. It does this by sending notifications to SNS via the Autoscaling lifecycle rules and using Lambda functions to add or remove the DNS entries and health checks.
 
+## The Flow
+
+###  Scale out
+1. An autoscaling scale-out trigger event occurs e.g. Cloudwatch metrics threshbold breach
+2. The autoscaling group starts a new instance based on the launch configuration
+3. A lifecycle hook for LAUNCHING is created and sent to SNS
+4. A Lambda function subscribed to the SNS topic creates a new DNS entry and an associated health check in Route 53
+5. A lifecycle CONTINUE is sent back to the Autoscaling group
+
+###  Scale out
+1. An autoscaling scale-in trigger event occurs e.g. Cloudwatch metrics threshbold back within constraints
+2. The autoscaling group terminates an instance
+3. A lifecycle hook for TERMINATING is created and sent to SNS
+4. A Lambda function subscribed to the SNS topic removes the DNS entry and associated health check in Route 53
+5. A lifecycle CONTINUE is sent back to the Autoscaling group
+
+
 ## High Level Diagram
 ![Diagram](Autoscaling_Lambda_R53.png)
 
